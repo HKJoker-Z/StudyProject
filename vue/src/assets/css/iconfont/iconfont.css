@@ -1,0 +1,19 @@
+@font-face {
+  font-family: "element-icons"; /* Project id 4575012 */
+  src: url('iconfont.woff2?t=1717567284869') format('woff2'),
+       url('iconfont.woff?t=1717567284869') format('woff'),
+       url('iconfont.ttf?t=1717567284869') format('truetype');
+}
+
+.element-icons {
+  font-family: "element-icons" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.el-icon-quanpingshuyi_quanping:before {
+  content: "\e661";
+}
+
