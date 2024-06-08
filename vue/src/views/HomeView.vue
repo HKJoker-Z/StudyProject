@@ -85,7 +85,18 @@
           </el-card>
 
             <el-card style="width: 50%">
+              <div slot="header" class="clearfix">
+                <span>渲染用户的数据</span>
+              </div>
+              <div>
+                <el-table :data="users">
+                  <el-table-column label="id" prop="id"></el-table-column>
+                  <el-table-column label="用户名" prop="username"></el-table-column>
+                  <el-table-column label="姓名" prop="name"></el-table-column>
+                  <el-table-column label="地址" prop="address"></el-table-column>
 
+                </el-table>
+              </div>
             </el-card>
 
 
@@ -101,15 +112,29 @@
 
 <script>
 
+import request from  '@/utils/request'
+
 export default {
   name: 'HomeView',
   data() {
     return {
       isCollapse: false,  // 不收缩
       asideWidth: '200px',
-      collapseIcon: 'el-icon-s-fold'
+      collapseIcon: 'el-icon-s-fold',
+      users: []
     }
   },
+
+  mounted() {
+    // axios.get('http://localhost:9090/user/selectAll').then(res => {
+    //   console.log(res.data);
+    //   this.users = res.data.data;
+    // })
+    request.get('/user/selectAll').then(res => {
+      this.users = res.data;
+    })
+  },
+
   methods: {
     handleFull() {
       document.documentElement.requestFullscreen()
