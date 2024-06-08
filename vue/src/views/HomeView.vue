@@ -66,7 +66,8 @@
           <div style="box-shadow: 0 0 10px rgba(0,0,0,.1); padding: 10px 20px; border-radius: 5px; margin-bottom: 10px">
             我要当香港程序员！
           </div>
-          <el-card style="width: 500px">
+          <div style="display: flex">
+            <el-card style="width: 50%; margin-right: 10px">
             <div slot="header" class="clearfix">
               <span>简单</span>
             </div>
@@ -82,6 +83,13 @@
               </div>
             </div>
           </el-card>
+
+            <el-card style="width: 50%">
+
+            </el-card>
+
+
+          </div>
         </el-main>
 
       </el-container>
