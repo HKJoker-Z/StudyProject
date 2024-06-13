@@ -21,7 +21,7 @@ public class WebController {
     UserService userService;
 
     @AuthAccess
-    @GetMapping("/")
+    @GetMapping("/hello")
     public Result hello() {
         return Result.success("hello, hell~!");
     }
