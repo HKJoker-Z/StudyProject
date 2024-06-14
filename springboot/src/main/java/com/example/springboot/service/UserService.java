@@ -1,17 +1,18 @@
 package com.example.springboot.service;
 
 import cn.hutool.core.util.RandomUtil;
-import com.example.springboot.common.Page;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.springboot.entity.User;
 import com.example.springboot.exception.ServiceException;
 import com.example.springboot.mapper.UserMapper;
 import com.example.springboot.utils.TokenUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.Serializable;
+import java.util.Collection;
 
 /***
  * 功能：
@@ -19,67 +20,48 @@ import java.util.Map;
  * 日期：6/6/2024 12:44
  **/
 @Service
-public class UserService {
+public class UserService extends ServiceImpl<UserMapper, User> {
 
-    @Autowired
+    @Resource
     UserMapper userMapper;
 
-    public void insertUser(User user) {
-        userMapper.insertUser(user);
-    }
-
-    public void updateUser(User user) {
-        userMapper.updateUser(user);
-    }
-
-    public void deleteUser(Integer id) {
-        userMapper.deleteUser(id);
-    }
-
-    public void batchDeleteUser(List<Integer> ids) {
-        for (Integer id : ids) {
-            userMapper.deleteUser(id);
+    @Override
+    public boolean save(User entity) {
+        if (StrUtil.isBlank(entity.getName())) {
+            entity.setName(entity.getUsername());
         }
+        if (StrUtil.isBlank(entity.getPassword())) {
+           entity.setPassword("123");
+        }
+        if (StrUtil.isBlank(entity.getRole())) {
+            entity.setRole("用户");
+        }
+
+        return super.save(entity);
     }
 
-    public List<User> selectAll() {
-        return userMapper.selectAll();
+    @Override
+    public boolean removeBatchByIds(Collection<?> list) {
+        User currentUser = TokenUtils.getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null && list.contains(currentUser.getId())) {
+            throw new ServiceException("不能删除当前用户！");
+        }
+
+        return super.removeBatchByIds(list);
     }
 
-    public User selectById(Integer id) {
-        return userMapper.selectById(id);
-    }
+    public User selectByUserName(String username) {
+        //根据用户名查询用户信息
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();//条件查询器
+        queryWrapper.eq("username", username);//where username = #{username}
 
-    public List<User> selectByName(String name) {
-        return userMapper.selectByName(name);
-    }
-
-    public List<User> selectByMore(String username, String name) {
-        return userMapper.selectByMore(username, name);
-    }
-
-    public List<User> selectByMo(String username, String name) {
-        return userMapper.selectByMo(username, name);
-    }
-
-    public Page<User> selectByPage(String username, String name, Integer pageNum, Integer pageSize) {
-        Integer skipNum = (pageNum - 1) * pageSize;
-
-        Page<User> page = new Page<>();
-        Map<String, Object> res = new HashMap<>();
-        List<User> userList = userMapper.selectByPage(username, name, skipNum, pageSize);
-        Integer total = userMapper.selectByCountByPage(username, name);
-
-        page.setTotal(total);
-        page.setList(userList);
-
-        return page;
+        return getOne(queryWrapper);// 等价于 select * from user where username = #{username}
     }
 
     //验证用户账户是否合法
     public User login(User user) {
-        //根据用户名查询用户信息
-        User dbUser = userMapper.selectByUserName(user.getUsername());
+        User dbUser = selectByUserName(user.getUsername());
+
         if (dbUser == null) {
             //抛出一个自定义的异常
             throw new ServiceException("用户名或密码错误！");
@@ -97,14 +79,31 @@ public class UserService {
     }
 
     public User register(User user) {
-        User dbUser = userMapper.selectByUserName(user.getUsername());
+        User dbUser = selectByUserName(user.getUsername());
+
         if (dbUser != null) {
             //抛出一个自定义的异常
             throw new ServiceException("用户名已存在！");
         }
 
         user.setName("default" + RandomUtil.randomNumbers(4));
-        userMapper.insertUser(user);
+        userMapper.insert(user);
         return user;
     }
+
+    public void resetPassword(User user) {
+        User dbUser = selectByUserName(user.getUsername());
+        if (dbUser == null) {
+            //抛出一个自定义的异常
+            throw new ServiceException("用户不存在！");
+        }
+        if (!user.getPhone().equals(dbUser.getPhone())) {
+            throw new ServiceException("验证不通过！");
+        }
+
+        dbUser.setPassword("123");//将密码重置为123
+        updateById(dbUser);
+    }
+
+
 }

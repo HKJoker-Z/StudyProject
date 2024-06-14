@@ -98,7 +98,7 @@ export default {
 /deep/.avatar-uploader .el-upload:hover {
   border-color: #409EFF;
 }
-.avatar-uploader-icon {
+/deep/.avatar-uploader-icon {
   font-size: 28px;
   color: #8c939d;
   width: 178px;

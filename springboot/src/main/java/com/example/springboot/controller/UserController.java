@@ -1,9 +1,14 @@
 package com.example.springboot.controller;
 
-import com.example.springboot.common.Page;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springboot.common.Result;
 import com.example.springboot.entity.User;
+import com.example.springboot.exception.ServiceException;
 import com.example.springboot.service.UserService;
+import com.example.springboot.utils.TokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.*;
@@ -32,9 +37,9 @@ public class UserController {
     public Result add(@RequestBody User user) {
 
         try {
-            userService.insertUser(user);
-        } catch (Exception e){
-            if (e instanceof DuplicateKeyException){
+            userService.save(user);
+        } catch (Exception e) {
+            if (e instanceof DuplicateKeyException) {
                 return Result.error("用户名重复！");
             } else {
                 return Result.error("系统错误");
@@ -49,7 +54,7 @@ public class UserController {
      */
     @PutMapping("/update")
     public Result update(@RequestBody User user) {
-        userService.updateUser(user);
+        userService.updateById(user);
         return Result.success();
     }
 
@@ -58,8 +63,12 @@ public class UserController {
      * 删除用户
      */
     @DeleteMapping("/delete/{id}")
-    public Result delete (@PathVariable Integer id) {
-        userService.deleteUser(id);
+    public Result delete(@PathVariable Integer id) {
+        User currentUser = TokenUtils.getCurrentUser();
+        if (id.equals(currentUser.getId())) {
+            throw new ServiceException("不能删除当前的用户");
+        }
+        userService.removeById(id);
         return Result.success();
     }
 
@@ -67,8 +76,8 @@ public class UserController {
      * 批量删除用户
      */
     @DeleteMapping("/delete/batch")
-    public Result batchDelete (@RequestBody List<Integer> ids) {
-        userService.batchDeleteUser(ids);
+    public Result batchDelete(@RequestBody List<Integer> ids) {
+        userService.removeBatchByIds(ids);
         return Result.success();
     }
 
@@ -77,8 +86,8 @@ public class UserController {
      * 查询用户信息
      */
     @GetMapping("/selectAll")
-    public Result selectAll () {
-        List<User> res = userService.selectAll();
+    public Result selectAll() {
+        List<User> res = userService.list(new QueryWrapper<User>().orderByDesc("Id"));//select * from user order by id DESC
         return Result.success(res);
     }
 
@@ -89,26 +98,8 @@ public class UserController {
      */
     @GetMapping("/selectById/{id}")
     public Result selectById(@PathVariable Integer id) {
-        User user = userService.selectById(id);
+        User user = userService.getById(id);
         return Result.success(user);
-    }
-
-    @GetMapping("/selectByName/{name}")
-    public Result selectByName(@PathVariable String name) {
-        List<User> res = userService.selectByName(name);
-        return Result.success(res);
-    }
-
-    @GetMapping("/selectByMore")
-    public Result selectByMore(@RequestParam String username, @RequestParam String name) {
-        List<User> res = userService.selectByMore(username, name);
-        return Result.success(res);
-    }
-
-    @GetMapping("/selectByMo")
-    public Result selectByMo(@RequestParam String username, @RequestParam String name) {
-        List<User> res = userService.selectByMo(username, name);
-        return Result.success(res);
     }
 
     /***
@@ -125,8 +116,15 @@ public class UserController {
                                @RequestParam Integer pageNum,
                                @RequestParam Integer pageSize
     ) {
-        Page<User> res = userService.selectByPage(username, name, pageNum, pageSize);
-        return Result.success(res);
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>().orderByAsc("id");
+        queryWrapper.like(StrUtil.isNotBlank(username), "username", username);
+        queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
+        //select * from user where username like '%#{username}%' and name like '%#{name}%'
+
+
+        Page<User> page = userService.page(new Page<>(pageNum, pageSize), queryWrapper);
+
+        return Result.success(page);
     }
 
 

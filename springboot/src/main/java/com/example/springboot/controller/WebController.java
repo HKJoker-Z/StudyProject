@@ -50,4 +50,20 @@ public class WebController {
         user = userService.register(user);
         return Result.success(user);
     }
+
+    /***
+     * 重置密码
+     * @param user
+     * @return
+     */
+    @AuthAccess
+    @PutMapping("/password")
+    public Result password(@RequestBody User user) {
+        if (StrUtil.isBlank(user.getUsername()) || StrUtil.isBlank(user.getPhone())) {
+            return Result.error("输入数据有误！");
+        }
+
+        userService.resetPassword(user);
+        return Result.success();
+    }
 }

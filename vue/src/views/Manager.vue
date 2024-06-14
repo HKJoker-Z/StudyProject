@@ -42,7 +42,7 @@
             <i class="el-icon-quanping" style="font-size: 26px" @click="handleFull"></i>
             <el-dropdown placement="bottom">
               <div style="display: flex; align-items: center; cursor: default">
-                <img src="user.avatar" alt="" style="width: 40px; height: 40px; margin: 0 5px; border-radius: 50%">
+                <img :src="user.avatar" alt="" style="width: 40px; height: 40px; margin: 0 5px; border-radius: 50%">
                 <span>{{ user.name }}</span>
               </div>
               <el-dropdown-menu slot="dropdown">
@@ -79,7 +79,7 @@ export default {
       isCollapse: false,  // 不收缩
       asideWidth: '200px',
       collapseIcon: 'el-icon-s-fold',
-      user: JSON.parse(localStorage.getItem('honey-user') || '{}'),
+      user: JSON.parse(localStorage.getItem('honey-user') || {}),
     }
   },
 
