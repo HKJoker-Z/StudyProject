@@ -1,21 +1,28 @@
 <template>
- <div>
+  <div>
 
-   <div>
-    <el-input style="width: 200px" placeholder="查询用户名" v-model="username"></el-input>
-    <el-input style="width: 200px; margin: 0 8px" placeholder="查询姓名" v-model="name"></el-input>
-     <el-button type="primary" @click="load(1)" >查询</el-button>
-     <el-button type="info" @click="reset" >重置</el-button>
-   </div>
+    <div>
+      <el-input style="width: 200px" placeholder="查询用户名" v-model="username"></el-input>
+      <el-input style="width: 200px; margin: 0 8px" placeholder="查询姓名" v-model="name"></el-input>
+      <el-button type="primary" @click="load(1)">查询</el-button>
+      <el-button type="info" @click="reset">重置</el-button>
+    </div>
 
-   <div style="margin: 10px 0 ">
-     <el-button type="primary" plain @click="handleAdd">新增</el-button>
-     <el-button type="danger" plain @click="delBatch" >批量删除</el-button>
-   </div>
+    <div style="margin: 10px 0 ">
+      <el-button type="primary" plain @click="handleAdd">新增</el-button>
+      <el-button type="danger" plain @click="delBatch">批量删除</el-button>
+      <el-button type="info" plain @click="exportData">批量导出</el-button>
+      <el-upload action="http://localhost:9090/user/import" :headers="{token: user.token}"
+                 style="display: inline-block; margin-left: 10px" :show-file-list="false"
+                 :on-success="handleImport">
+        <el-button type="primary" plain>批量导入</el-button>
+      </el-upload>
+    </div>
 
-   <el-table :data="tableData" stripe :header-cell-style="{ backgroundColor: 'aliceblue', color: '#666'}" @selection-change="handleSelectionChange" >
+    <el-table :data="tableData" stripe :header-cell-style="{ backgroundColor: 'aliceblue', color: '#666'}"
+              @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"></el-table-column>
-      <el-table-column prop="id" label="序号" width="70" ></el-table-column>
+      <el-table-column prop="id" label="序号" width="70"></el-table-column>
       <el-table-column prop="username" label="用户名"></el-table-column>
       <el-table-column prop="name" label="姓名"></el-table-column>
       <el-table-column prop="phone" label="手机号"></el-table-column>
@@ -24,20 +31,21 @@
       <el-table-column label="头像">
         <template v-slot="scope">
           <div style="display: flex; align-items: center">
-            <el-image v-if="scope.row.avatar" :src="scope.row.avatar" style="height: 50px; width: 50px; border-radius: 50px"
-            :preview-src-list="[scope.row.avatar]"
-          ></el-image>
+            <el-image v-if="scope.row.avatar" :src="scope.row.avatar"
+                      style="height: 50px; width: 50px; border-radius: 50px"
+                      :preview-src-list="[scope.row.avatar]"
+            ></el-image>
           </div>
         </template>
       </el-table-column>
       <el-table-column prop="role" label="角色"></el-table-column>
       <el-table-column label="操作" align="center" width="180px">
         <template v-slot="scope">
-          <el-button size="mini" type="primary" plain @click="handleEdit(scope.row)" >编辑</el-button>
-          <el-button size="mini" type="danger" plain @click="del(scope.row.id)" >删除</el-button>
+          <el-button size="mini" type="primary" plain @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button size="mini" type="danger" plain @click="del(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
-   </el-table>
+    </el-table>
 
     <div style="margin: 10px 0">
       <el-pagination
@@ -93,7 +101,7 @@
       </div>
     </el-dialog>
 
- </div>
+  </div>
 </template>
 
 <script>
@@ -113,7 +121,7 @@ export default {
       user: JSON.parse(localStorage.getItem('honey-user') || {}),
       rules: {
         username: [
-          { required: true, message: '请输入账号', trigger: 'blur' },
+          {required: true, message: '请输入账号', trigger: 'blur'},
         ]
       },
       ids: [],
@@ -125,23 +133,42 @@ export default {
   },
 
   methods: {
+    handleImport(res, file, fileList) {
+      if (res.code === '200') {
+        this.$message.success("操作成功")
+        this.load(1)
+      } else {
+        this.$message.error(res.msg)
+      }
+    },
+
+    exportData() {//批量导出数据
+      if (!this.ids.length) {//没选中数据
+        window.open('http://localhost:9090/user/export?token=' + this.user.token + '&username=' + this.username + '&name=' + this.name);
+      } else {
+        let idStr = this.ids.join(',')
+        window.open('http://localhost:9090/user/export?token=' + this.user.token + '&ids=' + idStr)
+      }
+    },
+
     delBatch() {
       if (!this.ids.length) {
         this.$message.warning("请选择数据！")
         return
       }
-      this.$confirm("确认要把它们全都删除吗？", "确认删除", {type : "warning"}).then(resp => {
+      this.$confirm("确认要把它们全都删除吗？", "确认删除", {type: "warning"}).then(resp => {
         this.$request.delete('/user/delete/batch', {
           data: this.ids
         }).then(res => {
-          if (res.code == '200'){
+          if (res.code == '200') {
             this.$message.success("删除成功！")
             this.load(1)
           } else {
             this.$message.error(res.msg)
           }
         })
-      }).catch(() => {})
+      }).catch(() => {
+      })
     },
 
     handleSelectionChange(rows) {//当前选中的所有的行的数据
@@ -150,16 +177,17 @@ export default {
     },
 
     del(id) {
-      this.$confirm("确认要删除吗？", "确认删除", {type : "warning"}).then(resp => {
+      this.$confirm("确认要删除吗？", "确认删除", {type: "warning"}).then(resp => {
         this.$request.delete('/user/delete/' + id).then(res => {
-          if (res.code == '200'){
+          if (res.code == '200') {
             this.$message.success("删除成功！")
             this.load(1)
           } else {
             this.$message.error(res.msg)
           }
         })
-      }).catch(() => {})
+      }).catch(() => {
+      })
     },
 
     handleEdit(row) {
@@ -202,7 +230,7 @@ export default {
       if (pageNum) {
         this.pageNum = pageNum
       }
-      this.$request.get("/user/selectByPage",{
+      this.$request.get("/user/selectByPage", {
         params: {
           pageNum: this.pageNum,
           pageSize: this.pageSize,
